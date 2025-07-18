@@ -165,7 +165,7 @@ export default function DetailPelanggaranPage() {
     }
   };
 
-  const apiBaseURL = "http://127.0.0.1:8000/storage/";
+  const apiBaseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
   
   const handleDownloadReport = async () => {
     if (!violation) return;
@@ -193,55 +193,61 @@ export default function DetailPelanggaranPage() {
       styles: { fontSize: 10 },
     });
   
-    let lastY = doc.lastAutoTable.finalY + 10;
+    // Tambahkan jarak tetap di bawah tabel
+    let nextY = 90 + (violation.bukti.length ? violation.bukti.length * 40 : 60);
   
-    if (violation.bukti.length) {
-      doc.setFontSize(12);
-      doc.text("Bukti Pelanggaran:", 14, lastY);
-      lastY += 6;
+    doc.setFontSize(12);
+    doc.text("Bukti Pelanggaran:", 14, nextY);
+    nextY += 1;
   
-      for (const b of violation.bukti) {
-        if (b.tipe === "image") {
-          try {
-            const res = await api.get(`/bukti/image/${b.id}`, {
-              responseType: "blob",
-              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-            });
-            const blob = res.data as Blob;
+    for (const b of violation.bukti) {
+      if (b.tipe === "image") {
+        try {
+          const res = await api.get(`/bukti/image/${b.id}`, {
+            responseType: "blob",
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          });
+          const blob = res.data as Blob;
   
-            const dataUrl: string = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-            });
+          const dataUrl: string = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
   
-            doc.addImage(dataUrl, "JPEG", 14, lastY, 40, 30);
-            lastY += 35;
-          } catch (err) {
-            console.error("Gagal load image:", err);
-            doc.setFontSize(10);
-            doc.text(`(Gagal memuat gambar: ${b.nama || "-"})`, 14, lastY);
-            lastY += 5;
-          }
-        } else {
+          doc.addImage(dataUrl, "JPEG", 14, nextY, 40, 30);
+          nextY += 35;
+        } catch (err) {
+          console.error("Gagal load image:", err);
           doc.setFontSize(10);
-          doc.text(`File: ${b.nama || "-"} (${b.deskripsi || "-"})`, 14, lastY);
-          lastY += 5;
+          doc.text(`(Gagal memuat gambar: ${b.nama || "-"})`, 14, nextY);
+          nextY += 5;
         }
+      } else {
+        doc.setFontSize(10);
+        doc.text(`File: ${b.nama || "-"} (${b.deskripsi || "-"})`, 14, nextY);
+        nextY += 1;
       }
     }
   
+    nextY += 1;
     doc.setFontSize(12);
-    doc.text("Tindakan:", 14, lastY + 5);
+    doc.text("Tindakan:", 14, nextY);
+    nextY += 6;
+  
     doc.setFontSize(10);
-    doc.text(`Sanksi / Tindakan: ${violation.tindakan || "-"}`, 14, lastY + 12);
-    doc.text(`Tanggal Tindak Lanjut: ${violation.tanggal_tindak_lanjut || "-"}`, 14, lastY + 18);
-    doc.text("Catatan:", 14, lastY + 24);
-    doc.text(violation.catatan || "-", 14, lastY + 30, { maxWidth: 180 });
+    doc.text(`Sanksi / Tindakan: ${violation.tindakan || "-"}`, 14, nextY);
+    nextY += 6;
+    doc.text(`Tanggal Tindak Lanjut: ${violation.tanggal_tindak_lanjut || "-"}`, 14, nextY);
+    nextY += 6;
+    doc.text("Catatan:", 14, nextY);
+    nextY += 6;
+    doc.text(violation.catatan || "-", 14, nextY, { maxWidth: 180 });
   
     doc.save(`pelanggaran_${violation.siswa.nis}.pdf`);
   };
+  
 
   if (loading) return <div className="p-4">Loading...</div>;
   if (!violation) return <div className="p-4">Data tidak ditemukan.</div>;
