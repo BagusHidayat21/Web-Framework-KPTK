@@ -23,9 +23,7 @@ export default function ExportTabel({ data, kelas }: ExportButtonsProps) {
     const worksheet = XLSX.utils.json_to_sheet(
       data.map((v) => {
         // Cari nama kelas dari master kelas
-        const kelasNama = v.siswa?.kelas?.nama
-          || kelas.find(k => k.id === v.siswa?.kelas_id)?.nama
-          || '';
+        const kelasNama = kelas.find(k => k.id === v.siswa?.kelas_id)?.nama || '';
 
         return {
           ID: v.id,
@@ -57,8 +55,7 @@ export default function ExportTabel({ data, kelas }: ExportButtonsProps) {
         "Tingkat", "Poin", "Tanggal", "Deskripsi", "Status"
       ]],
       body: data.map((v) => {
-        const kelasNama = v.siswa?.kelas?.nama
-          || kelas.find(k => k.id === v.siswa?.kelas_id)?.nama
+        const kelasNama = kelas.find(k => k.id === v.siswa?.kelas_id)?.nama
           || '';
 
         return [

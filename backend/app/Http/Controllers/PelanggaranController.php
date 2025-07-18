@@ -10,7 +10,7 @@ class PelanggaranController extends Controller
 {
     public function index()
     {
-        $data = Pelanggaran::with(['siswa', 'pelapor', 'bukti'])->get();
+        $data = Pelanggaran::with(['siswa.kelas', 'pelapor', 'bukti'])->get();
         return response()->json([
             'status' => true,
             'message' => 'Berhasil mengambil data pelanggaran',
@@ -20,7 +20,7 @@ class PelanggaranController extends Controller
 
     public function show($id)
     {
-        $data = Pelanggaran::with(['siswa', 'pelapor', 'bukti'])->find($id);
+        $data = Pelanggaran::with(['siswa.kelas', 'pelapor', 'bukti'])->find($id);
         if (!$data) {
             return response()->json([
                 'status' => false,

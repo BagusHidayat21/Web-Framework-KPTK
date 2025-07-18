@@ -30,7 +30,7 @@ export interface Violation {
   tanggal: string;
   deskripsi: string;
   status: string;
-  siswa?: { id: number; nama: string; nis: string; kelas_id: number };
+  siswa?: { id: number; nama: string; nis: string; kelas_id: number};
 }
 
 interface Kelas {

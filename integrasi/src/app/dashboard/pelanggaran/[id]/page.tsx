@@ -18,6 +18,10 @@ interface Student {
   nama: string;
   nis: string;
   kelas_id: number;
+  kelas?: {
+    id: number;
+    nama: string;
+  };
 }
 
 interface Reporter {
@@ -78,7 +82,7 @@ export default function DetailPelanggaranPage() {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setViolation(res.data.data);
-        console.log(res.data.data);
+        console.log("Detail Pelanggaran:", res.data.data);
       } catch (error) {
         console.error("Gagal fetch detail pelanggaran:", error);
       } finally {
@@ -173,6 +177,8 @@ export default function DetailPelanggaranPage() {
     const doc = new jsPDF();
     doc.setFontSize(16);
     doc.text("Laporan Pelanggaran Siswa", 14, 20);
+    
+    console.log(violation.siswa),
   
     autoTable(doc, {
       startY: 30,
@@ -180,7 +186,7 @@ export default function DetailPelanggaranPage() {
       body: [
         ["Nama Siswa", violation.siswa.nama],
         ["NIS", violation.siswa.nis],
-        ["Kelas ID", violation.siswa.kelas_id.toString()],
+        ["Kelas", violation.siswa.kelas?.nama || "Belum diketahui"],
         ["Jenis Pelanggaran", violation.jenis_pelanggaran],
         ["Tingkat", violation.tingkat],
         ["Poin", violation.poin.toString()],
