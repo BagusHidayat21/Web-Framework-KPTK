@@ -85,7 +85,8 @@ class AuthController extends Controller
         }
         return response()->json([
             'status' => 'success',
-            'message' => 'Token Valid'
+            'message' => 'Token Valid',
+            'data' => $request->user()
         ]);
     }
 
