@@ -114,7 +114,7 @@ export default function DetailPelanggaranPage() {
         ["Tanggal & Waktu", `${violation.tanggal} | ${violation.waktu}`],
         ["Lokasi", violation.lokasi],
         ["Status", violation.status],
-        ["Dilaporkan oleh", violation.dilaporkan_oleh.name],
+        ["Dilaporkan oleh", violation.pelapor.name],
         ["Deskripsi Kejadian", violation.deskripsi],
       ],
       styles: { fontSize: 10 },
