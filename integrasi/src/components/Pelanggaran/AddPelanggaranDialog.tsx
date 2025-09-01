@@ -23,19 +23,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { X, Upload, File, Image } from "lucide-react";
 
-interface Student {
-  id: number;
-  nama: string;
-  nis: string;
-  kelas_id: number;
-  kelas_nama: string;
-}
-
-interface Kelas {
-  id: number;
-  nama: string;
-  tingkat: string;
-}
+import { Kelas, Siswa } from "@/types";
 
 interface BuktiFile {
   file: File;
@@ -47,7 +35,7 @@ interface AddPelanggaranDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (violation: any) => void;
-  students: Student[];
+  students: Siswa[];
   kelas: Kelas[];
 }
 
@@ -74,9 +62,9 @@ export default function AddPelanggaranDialog({
   });
 
   const [buktiFiles, setBuktiFiles] = useState<BuktiFile[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Siswa[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Siswa | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -102,18 +90,18 @@ export default function AddPelanggaranDialog({
   }, [form.severity]);
 
   const getKelasName = (kelasId: number) =>
-    kelas.find((k) => k.id === kelasId)?.nama || "";
+    kelas.find((k) => k.id === kelasId)?.kelas || "";
 
   const handleChange = (key: string, value: string | number) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  const handleStudentSelect = (student: Student) => {
+  const handleStudentSelect = (student: Siswa) => {
     setSelectedStudent(student);
     setForm((prev) => ({
       ...prev,
       studentName: student.nama,
       studentId: student.nis,
-      class: getKelasName(student.kelas_id),
+      class: getKelasName(student.kelas_id || 0),
     }));
     setShowSuggestions(false);
   };
@@ -270,7 +258,7 @@ export default function AddPelanggaranDialog({
                     <div className="font-medium">{student.nama}</div>
                     <div className="text-xs text-gray-600">
                       NIS: {student.nis} - Kelas:{" "}
-                      {getKelasName(student.kelas_id)}
+                      {getKelasName(student.kelas_id || 0)}
                     </div>
                   </div>
                 ))}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Layout/Sidebar';
 import Navbar from '@/components/Layout/Topbar';
 
@@ -15,26 +16,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      window.location.href = '/auth/login';
-    } else {
-      api.post('/verify-token', null, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then(res => {
-          if (res.status !== 200) {
-            alert('Token Tidak Valid!');
-            window.location.href = '/auth/login';
-          }
-        })
-        .catch(() => {
-          window.location.href = '/auth/login';
-        });
+  const router = useRouter();
+
+  const verifyToken = async () => {
+    try {
+      const response = await api.post('/verify-token');
+      if (response.data.status === 'error') {
+        console.error('Token verification failed:', response.data.message);
+        router.push('/auth/login');
+      }
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      router.push('/auth/login');
     }
+  };
+
+  useEffect(() => {
+    verifyToken();
   }, []);
   
   return (

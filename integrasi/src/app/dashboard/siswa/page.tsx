@@ -4,54 +4,101 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import SiswaTable from "@/components/Siswa/SiswaTable";
 import EditSiswaDialog from "@/components/Siswa/EditSiswaDialog";
+import type { Siswa, Kelas } from "@/types"; // pakai tipe buatanmu
 import { api } from "@/lib/api";
+import { Award } from "lucide-react";
 
 export default function SiswaPage() {
-  const [dataSiswa, setDataSiswa] = useState<any[]>([]);
-  const [dataKelas, setDataKelas] = useState<any[]>([]);
+  // State untuk menyimpan data siswa
+  const [dataSiswa, setDataSiswa] = useState<Siswa[]>([]);
+  // State untuk menyimpan data kelas
+  const [dataKelas, setDataKelas] = useState<Kelas[]>([]);
+  // Filter kelas yang dipilih
   const [selectedKelasId, setSelectedKelasId] = useState<number | null>(null);
-  const [data, setData] = useState({ nama:"", nis:"", kelas_id:0, jurusan_id:0, pararel_id:0, jenis_kelamin:"", tanggal_lahir:"", alamat:"" });
+  // State untuk form tambah/edit siswa
+  const [data, setData] = useState<Omit<Siswa, 'id' | 'created_at' | 'updated_at' | 'kelas'>>({
+    nama: "", nis: "", kelas_id: 0, jenis_kelamin: "", tanggal_lahir: "", alamat: ""
+  });
+  // Menyimpan ID siswa yang sedang di-edit
   const [editingId, setEditingId] = useState<number | null>(null);
+  // Toggle untuk dialog edit siswa
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // Toggle untuk dialog tambah siswa
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
+  // 🔑 useEffect untuk fetch data awal (siswa & kelas) dari API
   useEffect(() => {
     const fetchData = async () => {
-      const [kelas, siswa] = await Promise.all([api.get("/kelas"), api.get("/siswa")]);
-      setDataSiswa(siswa.data.data);
-      setDataKelas(kelas.data.data);
+      try {
+        const [siswaRes, kelasRes] = await Promise.all([
+          api.get('/siswa'),
+          api.get('/kelas')
+        ]);
+        const siswaData = siswaRes.data.data;
+        const kelasData = kelasRes.data.data;
+  
+        setDataSiswa(siswaData); // simpan ke state
+        setDataKelas(kelasData); // simpan ke state
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
     };
     fetchData();
   }, []);
 
-  const handleChange = (key: string, value: string | number) => setData((prev) => ({ ...prev, [key]: value }));
-  const resetForm = () => setData({ nama:"", nis:"", kelas_id:0, jurusan_id:0, pararel_id:0, jenis_kelamin:"", tanggal_lahir:"", alamat:"" });
+  // 🔑 Fungsi untuk mengubah isi form
+  const handleChange = (key: string, value: string | number) =>
+    setData((prev) => ({ ...prev, [key]: value }));
 
-  const handleAdd = async () => {
-    try {
-      const res = await api.post("/siswa", data);
-      setDataSiswa((prev) => [...prev, res.data.data]);
-      setAddDialogOpen(false); resetForm();
-    } catch (e) { console.log(e); }
+  // 🔑 Reset form setelah tambah/edit
+  const resetForm = () =>
+    setData({ nama: "", nis: "", kelas_id: 0, jenis_kelamin: "", tanggal_lahir: "", alamat: "" });
+
+  // 🔑 Tambah siswa baru
+  const handleAdd = async() => {
+    await api.post('/siswa', data); // simpan ke server
+    const newId = dataSiswa.length ? Math.max(...dataSiswa.map(s => s.id)) + 1 : 1; // ambil ID baru
+    const kelasObj = dataKelas.find(k => k.id === data.kelas_id) || dataKelas[0];
+    const newSiswa: Siswa = { id: newId, ...data, kelas: kelasObj };
+    setDataSiswa(prev => [...prev, newSiswa]); // update state lokal
+    setAddDialogOpen(false);
+    resetForm();
   };
 
-  const handleEdit = (siswa: any) => {
-    setData(siswa); setEditingId(siswa.id); setEditDialogOpen(true);
+  // 🔑 Masukkan data siswa yang dipilih ke form edit
+  const handleEdit = (siswa: Siswa) => {
+    setData({
+      nama: siswa.nama,
+      nis: siswa.nis,
+      kelas_id: siswa.kelas_id,
+      jenis_kelamin: siswa.jenis_kelamin,
+      tanggal_lahir: siswa.tanggal_lahir,
+      alamat: siswa.alamat
+    });
+    setEditingId(siswa.id);
+    setEditDialogOpen(true);
   };
 
-  const handleUpdate = async () => {
+  // 🔑 Update data siswa
+  const handleUpdate = async() => {
     if (editingId) {
       try {
-        const res = await api.put(`/siswa/${editingId}`, data);
-        setDataSiswa((prev) => prev.map((s) => s.id === editingId ? res.data.data : s));
-        setEditDialogOpen(false); setEditingId(null); resetForm();
-      } catch (e) { console.log(e); }
+        await api.put(`/siswa/${editingId}`, data); // update ke server
+        const updatedSiswa = dataSiswa.map((s) => (s.id === editingId ? { ...s, ...data } : s));
+        setEditDialogOpen(false);
+        setEditingId(null);
+        resetForm();
+        setDataSiswa(updatedSiswa); // update state lokal
+      } catch (error) {
+        console.error('Gagal mengupdate siswa:', error);
+      }
     }
   };
 
-  const handleDelete = async (id: number) => {
-    await api.delete(`/siswa/${id}`);
-    setDataSiswa((prev) => prev.filter((s) => s.id !== id));
+  // 🔑 Hapus siswa
+  const handleDelete = (id: number) => {
+    api.delete(`/siswa/${id}`); // hapus di server
+    setDataSiswa(prev => prev.filter(s => s.id !== id)); // update state lokal
   };
 
   return (
@@ -72,6 +119,7 @@ export default function SiswaPage() {
           handleAdd={handleAdd}
         />
       </Card>
+      {/* 🔑 Dialog edit siswa */}
       <EditSiswaDialog
         open={editDialogOpen}
         setOpen={setEditDialogOpen}

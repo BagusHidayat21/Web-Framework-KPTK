@@ -14,8 +14,4 @@ class Bukti_Pelanggaran extends Model
     protected $fillable = [
         'pelanggaran_id', 'tipe', 'url', 'nama', 'deskripsi', 'diunggah_oleh', 'waktu_unggah'
     ];
-
-    public function pelanggaran() {
-        return $this->belongsTo(Pelanggaran::class, 'pelanggaran_id', 'id');
-    }
 }

@@ -21,7 +21,7 @@ export default function EditKelasDialog({
 }: {
   open: boolean;
   setOpen: (v: boolean) => void;
-  form: { nama: string };
+  form: { kelas: string };
   handleChange: (key: string, value: string) => void;
   handleUpdate: () => void;
 }) {
@@ -35,8 +35,8 @@ export default function EditKelasDialog({
           <Label htmlFor="edit-nama">Nama</Label>
           <Input
             id="edit-nama"
-            value={form.nama}
-            onChange={e => handleChange('nama', e.target.value)}
+            value={form.kelas}
+            onChange={e => handleChange('kelas', e.target.value)}
           />
         </div>
         <DialogFooter>

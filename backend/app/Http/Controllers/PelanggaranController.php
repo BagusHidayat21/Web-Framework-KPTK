@@ -65,7 +65,7 @@ class PelanggaranController extends Controller
         try {
             // Buat pelanggaran
             $pelanggaran = Pelanggaran::create([
-                'dilaporkan_oleh' => $user->id,
+                'dilaporkan_oleh' => 1,
                 'siswa_id' => $validated['siswa_id'],
                 'jenis_pelanggaran' => $validated['jenis_pelanggaran'],
                 'tingkat' => $validated['tingkat'],
@@ -103,7 +103,7 @@ class PelanggaranController extends Controller
                             'url' => $path, // Path relatif ke storage
                             'nama' => $file->getClientOriginalName(),
                             'deskripsi' => $descriptions[$index] ?? null,
-                            'diunggah_oleh' => $user->name ?? $user->username,
+                            'diunggah_oleh' => 'Bagus',
                             'waktu_unggah' => now(),
                             'mime_type' => $mimeType,
                             'size' => $file->getSize(),
@@ -144,28 +144,82 @@ class PelanggaranController extends Controller
             ], 404);
         }
 
+        $user = $request->user();
+
         $validated = $request->validate([
             'jenis_pelanggaran' => 'sometimes|string',
             'tingkat' => 'sometimes|string',
             'poin' => 'sometimes|integer',
             'tanggal' => 'sometimes|date',
-            'waktu' => 'sometimes',
-            'lokasi' => 'sometimes|string',
-            'deskripsi' => 'sometimes|string',
-            'status' => 'sometimes|string',
+            'waktu' => 'sometimes|string',
+            'lokasi' => 'nullable|string',
+            'deskripsi' => 'nullable|string',
+            'status' => 'nullable|string',
             'tindakan' => 'nullable|string',
             'tanggal_tindak_lanjut' => 'nullable|date',
             'catatan' => 'nullable|string',
+
+            // Validasi untuk file upload baru
+            'bukti_files' => 'nullable|array',
+            'bukti_files.*' => 'file|mimes:jpeg,png,jpg,gif,pdf,doc,docx|max:10240',
+
+            // Validasi deskripsi bukti baru
+            'bukti_descriptions' => 'nullable|array',
+            'bukti_descriptions.*' => 'nullable|string',
         ]);
 
-        $pelanggaran->update($validated);
+        try {
+            // Update data pelanggaran
+            $pelanggaran->update($validated);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Pelanggaran berhasil diperbarui',
-            'data' => $pelanggaran
-        ]);
+            // Handle file bukti baru (jika ada)
+            if ($request->hasFile('bukti_files')) {
+                $buktiData = [];
+                $files = $request->file('bukti_files');
+                $descriptions = $request->input('bukti_descriptions', []);
+
+                foreach ($files as $index => $file) {
+                    if ($file->isValid()) {
+                        $filename = time() . '_' . $index . '_' . $file->getClientOriginalName();
+                        $path = $file->storeAs('bukti', $filename, 'public');
+
+                        $mimeType = $file->getMimeType();
+                        $tipe = str_starts_with($mimeType, 'image/') ? 'image' : 'file';
+
+                        $buktiData[] = [
+                            'tipe' => $tipe,
+                            'url' => $path,
+                            'nama' => $file->getClientOriginalName(),
+                            'deskripsi' => $descriptions[$index] ?? null,
+                            'diunggah_oleh' => $user->name ?? $user->username,
+                            'waktu_unggah' => now(),
+                            'mime_type' => $mimeType,
+                            'size' => $file->getSize(),
+                        ];
+                    }
+                }
+
+                if (!empty($buktiData)) {
+                    $pelanggaran->bukti()->createMany($buktiData);
+                }
+            }
+
+            // Load relasi supaya response lengkap
+            $pelanggaran->load('bukti', 'siswa', 'pelapor');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Pelanggaran berhasil diperbarui',
+                'data' => $pelanggaran
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal memperbarui pelanggaran: ' . $e->getMessage()
+            ], 500);
+        }
     }
+
 
     public function destroy($id)
     {

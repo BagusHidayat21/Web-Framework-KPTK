@@ -1,12 +1,12 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Bell, Menu, X, Home, Users, ChartBar, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const Sidebar = ({
@@ -17,7 +17,6 @@ const Sidebar = ({
   onClose: () => void;
 }) => {
   const pathname = usePathname();
-  const [userInfo, setUserInfo] = useState({ name: '', email: '' });
   
   const menuItems = [
     { 
@@ -41,14 +40,8 @@ const Sidebar = ({
       icon: ChartBar
     },
   ];
-
-  useEffect(() => {
-    const name = localStorage.getItem("userName") || '';
-    const email = localStorage.getItem("userEmail") || '';
-    setUserInfo({ name, email });
-  }, []);
   
-  const SidebarContent = ({ isMobile = false }: { isMobile?: boolean }) => (
+  const SidebarContent = () => (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
       <div className="flex h-16 items-center justify-between px-6 border-b">
@@ -58,16 +51,14 @@ const Sidebar = ({
           </div>
           <h1 className="text-lg font-semibold tracking-tight">SchoolApp</h1>
         </div>
-        {isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden h-8 w-8"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
       
       {/* Navigation */}
@@ -80,7 +71,7 @@ const Sidebar = ({
             <Link
               key={href}
               href={href}
-              onClick={isMobile ? onClose : undefined}
+              onClick={onClose}
               className={cn(
                 "flex items-center justify-between w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
@@ -106,9 +97,9 @@ const Sidebar = ({
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{userInfo.name}</p>
+            <p className="text-sm font-medium truncate">Admin User</p>
             <p className="text-xs text-muted-foreground truncate">
-              {userInfo.email}
+              admin@school.com
             </p>
           </div>
         </div>
@@ -126,12 +117,7 @@ const Sidebar = ({
       {/* Mobile Sidebar */}
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetContent side="left" className="p-0 w-64">
-          <VisuallyHidden>
-            <SheetHeader>
-              <SheetTitle>Navigation Menu</SheetTitle>
-            </SheetHeader>
-          </VisuallyHidden>
-          <SidebarContent isMobile={true} />
+          <SidebarContent />
         </SheetContent>
       </Sheet>
     </>

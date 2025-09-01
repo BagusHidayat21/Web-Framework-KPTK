@@ -21,28 +21,13 @@ import ConfirmDeleteDialog from "@/components/Layout/DeleteDialog";
 import Link from "next/link";
 import { useState } from "react";
 
-export interface Violation {
-  id: number;
-  siswa_id: number;
-  jenis_pelanggaran: string;
-  tingkat: string;
-  poin: number;
-  tanggal: string;
-  deskripsi: string;
-  status: string;
-  siswa?: { id: number; nama: string; nis: string; kelas_id: number};
-}
+import { Pelanggaran, Kelas } from "@/types";
 
-interface Kelas {
-  id: number;
-  nama: string;
-  tingkat: string;
-}
-
+// Props untuk tabel pelanggaran
 interface PelanggaranTableProps {
-  violations: Violation[];
+  violations: Pelanggaran[]; // gunakan type Pelanggaran
   kelasList: Kelas[];
-  onEdit: (violation: Violation) => void;
+  onEdit: (violation: Pelanggaran) => void;
   onDelete: (id: number) => void;
   pageSize: number;
   page: number;
@@ -59,9 +44,14 @@ export default function PelanggaranTable({
   setPage,
 }: PelanggaranTableProps) {
   const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  //  Hitung total halaman
   const totalPages = Math.max(1, Math.ceil(violations.length / pageSize));
+
+  //  Ambil data sesuai pagination
   const paginated = violations.slice((page - 1) * pageSize, page * pageSize);
 
+  //  Warna badge tingkat pelanggaran
   const getSeverityColor = (s: string) =>
     s === "Ringan"
       ? "bg-green-100 text-green-800"
@@ -71,6 +61,7 @@ export default function PelanggaranTable({
       ? "bg-red-100 text-red-800"
       : "bg-gray-100 text-gray-800";
 
+  //  Warna badge status
   const getStatusColor = (s: string) =>
     s === "Aktif"
       ? "bg-orange-100 text-orange-800"
@@ -99,10 +90,9 @@ export default function PelanggaranTable({
           <tbody>
             {paginated.length > 0 ? (
               paginated.map((v, idx) => {
-                const kelasNama = v.siswa?.kelas_id
-                  ? kelasList.find((k) => k.id === v.siswa!.kelas_id)?.nama ||
-                    "N/A"
-                  : "N/A";
+                //  Ambil nama kelas dari siswa.kelas (kalau tersedia)
+                const kelasNama = v.siswa?.kelas?.kelas ?? "N/A";
+
                 return (
                   <tr key={v.id} className="border-b hover:bg-gray-50">
                     <td className="p-2 text-center">
@@ -134,14 +124,19 @@ export default function PelanggaranTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          {/*  Link ke detail */}
                           <DropdownMenuItem asChild>
                             <Link href={`/dashboard/pelanggaran/${v.id}`}>
                               <Eye className="mr-2 h-4 w-4" /> Detail
                             </Link>
                           </DropdownMenuItem>
+
+                          {/*  Edit data */}
                           <DropdownMenuItem onClick={() => onEdit(v)}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit
                           </DropdownMenuItem>
+
+                          {/*  Hapus data */}
                           <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => setDeleteId(v.id)}
@@ -164,6 +159,7 @@ export default function PelanggaranTable({
           </tbody>
         </table>
 
+        {/*  Konfirmasi delete */}
         <Dialog
           open={deleteId !== null}
           onOpenChange={(open) => !open && setDeleteId(null)}
@@ -179,7 +175,7 @@ export default function PelanggaranTable({
         </Dialog>
       </div>
 
-      {/* Pagination */}
+      {/*  Pagination */}
       {violations.length > 0 && (
         <div className="flex justify-between text-xs text-gray-600 items-center">
           <div>

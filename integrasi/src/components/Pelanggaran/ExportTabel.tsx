@@ -4,12 +4,11 @@ import { Button } from '@/components/ui/button';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Violation } from './PelanggaranTable'; // sesuaikan path kalau beda
+import { Pelanggaran as Violation } from '@/types';
 
 interface Kelas {
   id: number;
-  nama: string;
-  tingkat: string;
+  kelas: string;
 }
 
 interface ExportButtonsProps {
@@ -23,7 +22,7 @@ export default function ExportTabel({ data, kelas }: ExportButtonsProps) {
     const worksheet = XLSX.utils.json_to_sheet(
       data.map((v) => {
         // Cari nama kelas dari master kelas
-        const kelasNama = kelas.find(k => k.id === v.siswa?.kelas_id)?.nama || '';
+        const kelasNama = kelas.find(k => k.id === v.siswa?.kelas_id)?.kelas || '';
 
         return {
           ID: v.id,
@@ -55,7 +54,7 @@ export default function ExportTabel({ data, kelas }: ExportButtonsProps) {
         "Tingkat", "Poin", "Tanggal", "Deskripsi", "Status"
       ]],
       body: data.map((v) => {
-        const kelasNama = kelas.find(k => k.id === v.siswa?.kelas_id)?.nama
+        const kelasNama = kelas.find(k => k.id === v.siswa?.kelas_id)?.kelas
           || '';
 
         return [

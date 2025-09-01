@@ -19,7 +19,7 @@ class SiswaFactory extends Factory
         $nisn = $this->faker->unique()->numerify('####-####-####');
         $nama = $this->faker->name();
         $jenis_kelamin = $this->faker->randomElement(['L', 'P']);
-        $kelas_id = $this->faker->numberBetween(1, 30);
+        $kelas_id = $this->faker->numberBetween(1, 20);
         $tanggal_lahir = $this->faker->dateTimeBetween('-25 years', '-10 years');
         $alamat = $this->faker->address();
 

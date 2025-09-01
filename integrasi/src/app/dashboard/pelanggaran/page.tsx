@@ -5,9 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Filter, X } from "lucide-react";
-import PelanggaranTable, {
-  type Violation,
-} from "@/components/Pelanggaran/PelanggaranTable";
+import PelanggaranTable from "@/components/Pelanggaran/PelanggaranTable";
 import AddPelanggaranDialog from "@/components/Pelanggaran/AddPelanggaranDialog";
 import EditPelanggaranDialog from "@/components/Pelanggaran/EditPelanggaranDialog";
 import PelanggaranFilters from "@/components/Pelanggaran/FilterTable";
@@ -20,30 +18,15 @@ import {
 } from "@/components/ui/select";
 import ExportTabel from "@/components/Pelanggaran/ExportTabel";
 import { api } from "@/lib/api";
-
-interface Student {
-  id: number;
-  nama: string;
-  nis: string;
-  kelas_id: number;
-  kelas_nama: string;
-}
-
-interface Kelas {
-  id: number;
-  nama: string;
-  tingkat: string;
-}
+import { Kelas, Siswa, Pelanggaran } from "@/types";
 
 export default function PelanggaranPage() {
-  const [students, setStudents] = useState<Student[]>([]);
+  // === STATE ===
+  const [students, setStudents] = useState<Siswa[]>([]);
   const [kelas, setKelas] = useState<Kelas[]>([]);
-  const [violations, setViolations] = useState<Violation[]>([]);
+  const [violations, setViolations] = useState<Pelanggaran[]>([]);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingViolation, setEditingViolation] = useState<Violation | null>(
-    null
-  );
+  const [editingViolation, setEditingViolation] = useState<Pelanggaran | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
@@ -58,58 +41,53 @@ export default function PelanggaranPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // === FETCH DATA AWAL ===
   useEffect(() => {
+    const fetchInitialData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await Promise.all([
+          fetchViolations(),
+          fetchStudents(),
+          fetchKelas(),
+        ]);
+      } catch {
+        setError("Gagal memuat data awal");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchInitialData();
   }, []);
 
-  const fetchInitialData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await Promise.all([fetchViolations(), fetchStudents(), fetchKelas()]);
-    } catch (error) {
-      setError("Gagal memuat data awal");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // --- API calls ---
   const fetchViolations = async () => {
-    const token = localStorage.getItem("token");
-    const res = await api.get("/pelanggaran", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await api.get("/pelanggaran");
     setViolations(res.data.data || []);
   };
 
   const fetchStudents = async () => {
-    const token = localStorage.getItem("token");
-    const res = await api.get("/siswa", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await api.get("/siswa");
     setStudents(res.data.data || []);
   };
 
   const fetchKelas = async () => {
-    const token = localStorage.getItem("token");
-    const res = await api.get("/kelas", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await api.get("/kelas");
     setKelas(res.data.data || []);
   };
 
-  const handleAdd = async (newViolation: Omit<Violation, "id">) => {
-    const token = localStorage.getItem("token");
-    const res = await api.post("/pelanggaran", newViolation, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  // === CRUD HANDLERS ===
+  const handleAdd = async (newViolation: Omit<Pelanggaran, "id">) => {
+    const res = await api.post("/pelanggaran", newViolation);
     setViolations((prev) => [...prev, res.data.data]);
     setAddDialogOpen(false);
   };
 
-  const handleUpdate = async (updated: Violation & { updated_by: number }) => {
+  const handleUpdate = async (updated: Pelanggaran & { updated_by: number }) => {
     try {
-      const token = localStorage.getItem('token');
+      // payload untuk API
       const payload = {
         jenis_pelanggaran: updated.jenis_pelanggaran,
         tingkat: updated.tingkat,
@@ -117,33 +95,31 @@ export default function PelanggaranPage() {
         tanggal: updated.tanggal,
         deskripsi: updated.deskripsi,
         status: updated.status,
-        updated_by: updated.updated_by
+        updated_by: updated.updated_by,
       };
-      const res = await api.put(`/pelanggaran/${updated.id}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+
+      const res = await api.put(`/pelanggaran/${updated.id}`, payload);
       const newData = res.data.data;
-      setViolations(prev => prev.map(v =>
-        v.id === newData.id
-          ? { ...newData, siswa: v.siswa }
-          : v
-      ));
-      setEditDialogOpen(false);
+
+      // update state lokal
+      setViolations((prev) =>
+        prev.map((v) =>
+          v.id === newData.id ? { ...newData, siswa: v.siswa } : v
+        )
+      );
+
       setEditingViolation(null);
     } catch (e) {
-      console.error(e);
+      console.error("Gagal update pelanggaran:", e);
     }
   };
-  
 
   const handleDelete = async (id: number) => {
-    const token = localStorage.getItem("token");
-    await api.delete(`/pelanggaran/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    await api.delete(`/pelanggaran/${id}`);
     setViolations((prev) => prev.filter((v) => v.id !== id));
   };
 
+  // === FILTER & SEARCH ===
   const handleFilterChange = (key: string, value: string) =>
     setFilters((prev) => ({ ...prev, [key]: value }));
 
@@ -158,6 +134,7 @@ export default function PelanggaranPage() {
     setSearch("");
   };
 
+  // Opsi filter yang tersedia
   const filterOptions = useMemo(() => {
     const types = [...new Set(violations.map((v) => v.jenis_pelanggaran))];
     const severities = ["Ringan", "Sedang", "Berat"];
@@ -165,21 +142,16 @@ export default function PelanggaranPage() {
     return { types, severities, statuses };
   }, [violations]);
 
+  // Hasil setelah filter & search
   const filteredViolations = useMemo(() => {
     return violations.filter((v) => {
-      if (
-        filters.startDate &&
-        new Date(v.tanggal) < new Date(filters.startDate)
-      )
+      if (filters.startDate && new Date(v.tanggal) < new Date(filters.startDate))
         return false;
       if (filters.endDate && new Date(v.tanggal) > new Date(filters.endDate))
         return false;
       if (filters.status && v.status !== filters.status) return false;
       if (filters.severity && v.tingkat !== filters.severity) return false;
-      if (
-        filters.violationType &&
-        v.jenis_pelanggaran !== filters.violationType
-      )
+      if (filters.violationType && v.jenis_pelanggaran !== filters.violationType)
         return false;
       if (search) {
         const q = search.toLowerCase();
@@ -196,11 +168,12 @@ export default function PelanggaranPage() {
     });
   }, [violations, filters, search]);
 
-  // Reset page ke 1 kalau filter/search berubah
+  // Reset halaman ke 1 setiap kali filter/search berubah
   useEffect(() => {
     setPage(1);
   }, [filters, search, pageSize]);
 
+  // === RENDER ===
   if (loading)
     return <div className="flex justify-center h-64">Memuat data...</div>;
   if (error)
@@ -208,18 +181,23 @@ export default function PelanggaranPage() {
 
   return (
     <div className="space-y-4">
+      {/* Header + Export */}
       <div className="flex justify-between">
         <h1 className="text-2xl font-bold">Data Pelanggaran</h1>
         <ExportTabel data={filteredViolations} kelas={kelas} />
       </div>
+
       <Card className="p-4">
+        {/* Search + Filter + Reset + Page Size + Tambah */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div className="flex flex-1 gap-2">
+            {/* 🔍 Search */}
             <Input
               placeholder="Cari..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {/* 🔽 Toggle filter */}
             <Button
               variant="outline"
               size="sm"
@@ -227,9 +205,8 @@ export default function PelanggaranPage() {
             >
               <Filter className="h-4 w-4" /> Filter
             </Button>
-            {(showFilters ||
-              search ||
-              Object.values(filters).some((v) => v)) && (
+            {/* ❌ Reset */}
+            {(showFilters || search || Object.values(filters).some((v) => v)) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -240,7 +217,9 @@ export default function PelanggaranPage() {
               </Button>
             )}
           </div>
+
           <div className="flex gap-2">
+            {/* 🔢 Jumlah data per halaman */}
             <Select
               value={pageSize.toString()}
               onValueChange={(v) => setPageSize(Number(v))}
@@ -256,6 +235,7 @@ export default function PelanggaranPage() {
                 ))}
               </SelectContent>
             </Select>
+            {/* ➕ Tambah data */}
             <AddPelanggaranDialog
               open={addDialogOpen}
               onOpenChange={setAddDialogOpen}
@@ -266,6 +246,7 @@ export default function PelanggaranPage() {
           </div>
         </div>
 
+        {/* Filter detail */}
         {showFilters && (
           <PelanggaranFilters
             showFilters={showFilters}
@@ -281,6 +262,7 @@ export default function PelanggaranPage() {
           />
         )}
 
+        {/* Tabel utama */}
         <PelanggaranTable
           violations={filteredViolations}
           kelasList={kelas}
@@ -292,6 +274,7 @@ export default function PelanggaranPage() {
         />
       </Card>
 
+      {/* Dialog edit */}
       <EditPelanggaranDialog
         open={!!editingViolation}
         onOpenChange={(o) => !o && setEditingViolation(null)}

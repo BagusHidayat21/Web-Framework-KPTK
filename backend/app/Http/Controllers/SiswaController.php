@@ -9,72 +9,54 @@ class SiswaController extends Controller
 {
     public function index()
     {
-        Siswa::all();
+        $siswas = Siswa::with('kelas')->get();
         return response()->json([
             'status' => 'success',
-            'message' => 'Berhasil Mengambil Data Siswa',
-            'data' => Siswa::all()
+            'message' => 'berhasil mengambil semua data',
+            'data'=> $siswas
         ]);
     }
 
     public function show($id)
     {
-        $Siswa = Siswa::find($id);
-        if (!$Siswa) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data Siswa Tidak Ditemukan'
-            ]);
-        }
-
+        $siswa = Siswa::with('kelas')->find($id);
         return response()->json([
             'status' => 'success',
-            'message' => 'Berhasil Mengambil Data Siswa',
-            'data' => $Siswa
+            'message' => 'berhasil mengambil data',
+            'data'=> $siswa
         ]);
     }
 
     public function store(Request $request)
     {
-        $Siswa = Siswa::create($request->all());
+        $siswa = Siswa::create($request->all());
         return response()->json([
             'status' => 'success',
-            'message' => 'Berhasil Menambahkan Data Siswa',
-            'data' => $Siswa
+            'message' => 'berhasil menambahkan data',
+            'data'=> $siswa
         ]);
     }
 
     public function update(Request $request, $id)
     {
-        $Siswa = Siswa::find($id);
-        if (!$Siswa) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data Siswa Tidak Ditemukan'
-            ]);
-        }
-        $Siswa->update($request->all());
+        $siswa = Siswa::find($id);
+        $siswa->update($request->all());
         return response()->json([
             'status' => 'success',
-            'message' => 'Berhasil Mengubah Data Siswa',
-            'data' => $Siswa
+            'message' => 'berhasil mengubah data',
+            'data'=> $siswa
         ]);
     }
 
     public function destroy($id)
     {
-        $Siswa = Siswa::find($id);
-        if (!$Siswa) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Data Siswa Tidak Ditemukan'
-            ]);
-        }
-        $Siswa->delete();
+        $siswa = Siswa::find($id);
+        $siswa->delete();
         return response()->json([
             'status' => 'success',
-            'message' => 'Berhasil Menghapus Data Siswa',
-            'data' => $Siswa
+            'message' => 'berhasil menghapus data',
+            'data'=> $siswa
         ]);
     }
+
 }

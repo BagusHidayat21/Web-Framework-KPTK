@@ -2,30 +2,11 @@
 
 import { DataTable } from "@/components/Layout/Table";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import FormFields from "@/components/Layout/FormFields";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import ConfirmDeleteDialog from "@/components/Layout/DeleteDialog";
 import AddSiswaDialog from "@/components/Siswa/AddSiswaDialog";
 
-interface Siswa {
-  id: number;
-  nama: string;
-  nis: string;
-  kelas: string;
-  kelas_id: number;
-  jurusan: string;
-  jurusan_id: number;
-  pararel: string;
-  pararel_id: number;
-  jenis_kelamin: string;
-  tanggal_lahir: string;
-  alamat: string;
-}
-
-interface Kelas {
-  id: number;
-  nama: string;
-}
+import type { Siswa, Kelas } from "@/types";
 
 export default function SiswaTable({
   dataSiswa,
@@ -38,7 +19,7 @@ export default function SiswaTable({
   setAddDialogOpen,
   data,
   handleChange,
-  handleAdd
+  handleAdd,
 }: {
   dataSiswa: Siswa[];
   dataKelas: Kelas[];
@@ -48,33 +29,54 @@ export default function SiswaTable({
   handleDelete: (id: number) => void;
   addDialogOpen: boolean;
   setAddDialogOpen: (v: boolean) => void;
-  data: any;
+  data: Partial<Siswa>;
   handleChange: (key: string, value: string | number) => void;
   handleAdd: () => void;
 }) {
+  // Filter data by kelas jika dipilih
   const filteredSiswa = selectedKelasId
     ? dataSiswa.filter((s) => s.kelas_id === selectedKelasId)
     : dataSiswa;
 
   const columns = [
-    { header: "No", cell: ({ row }: any) => <div className="text-center">{row.index + 1}</div> },
-    { accessorKey: "nama", header: "Nama" },
-    { accessorKey: "nis", header: "NIS", cell: ({ row }: any) => <div className="text-center">{row.original.nis}</div> },
+    {
+      header: "No",
+      cell: ({ row }: any) => <div className="text-center">{row.index + 1}</div>,
+    },
+    {
+      accessorKey: "nama",
+      header: "Nama",
+    },
+    {
+      accessorKey: "nis",
+      header: "NIS",
+      cell: ({ row }: any) => <div className="text-center">{row.original.nis}</div>,
+    },
     {
       header: "Kelas",
-      cell: ({ row }: any) => (
-        <div className="text-center">{dataKelas.find((k) => k.id === row.original.kelas_id)?.nama}</div>
-      ),
+      cell: ({ row }: any) => {
+        return <div className="text-center">{row.original.kelas?.kelas}</div>;
+      },
     },
-    { accessorKey: "jenis_kelamin", header: "Jenis Kelamin", cell: ({ row }: any) => <div className="text-center">{row.original.jenis_kelamin}</div> },
-    { accessorKey: "tanggal_lahir", header: "Tanggal Lahir", cell: ({ row }: any) => <div className="text-center">{row.original.tanggal_lahir}</div> },
+    {
+      accessorKey: "jenis_kelamin",
+      header: "Jenis Kelamin",
+      cell: ({ row }: any) => <div className="text-center">{row.original.jenis_kelamin}</div>,
+    },
+    {
+      accessorKey: "tanggal_lahir",
+      header: "Tanggal Lahir",
+      cell: ({ row }: any) => <div className="text-center">{row.original.tanggal_lahir}</div>,
+    },
     {
       header: "Aksi",
       cell: ({ row }: any) => {
-        const siswa = row.original as Siswa;
+        const siswa: Siswa = row.original;
         return (
           <div className="flex gap-2 justify-center items-center">
-            <Button onClick={() => handleEdit(siswa)} className="bg-yellow-300">Edit</Button>
+            <Button onClick={() => handleEdit(siswa)} className="bg-yellow-300">
+              Edit
+            </Button>
             <Dialog>
               <DialogTrigger asChild>
                 <Button className="bg-red-500 text-white">Hapus</Button>
@@ -101,7 +103,9 @@ export default function SiswaTable({
           >
             <option value="">Semua Kelas</option>
             {dataKelas.map((kelas) => (
-              <option key={kelas.id} value={kelas.id}>{kelas.nama}</option>
+              <option key={kelas.id} value={kelas.id}>
+                {kelas.kelas}
+              </option>
             ))}
           </select>
         </div>

@@ -1,57 +1,89 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { Card } from '@/components/ui/card';
-import KelasTable from '@/components/Kelas/KelasTable';
-import AddKelasDialog from '@/components/Kelas/AddKelasDialog';
-import EditKelasDialog from '@/components/Kelas/EditKelasDialog';
-import { api } from '@/lib/api';
-
-interface Kelas {
-  id: number;
-  nama: string;
-}
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import KelasTable from "@/components/Kelas/KelasTable";
+import AddKelasDialog from "@/components/Kelas/AddKelasDialog";
+import EditKelasDialog from "@/components/Kelas/EditKelasDialog";
+import { Kelas } from "@/types";
+import { api } from "@/lib/api";
 
 export default function KelasPage() {
+  // state untuk menyimpan list kelas dari API
   const [kelas, setKelas] = useState<Kelas[]>([]);
-  const [form, setForm] = useState({ nama: '' });
+
+  // state untuk menyimpan form (digunakan di tambah & edit)
+  const [form, setForm] = useState<{ kelas: string }>({ kelas: "" });
+
+  // state untuk menyimpan ID yang sedang diedit
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  // state untuk membuka/menutup dialog
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-  useEffect(() => {
-    api.get('/kelas').then(res => setKelas(res.data.data));
-  }, []);
-
-  const handleChange = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
-
-  const handleAdd = () => {
-    api.post('/kelas', { nama: form.nama }).then(res => {
-      setKelas(prev => [...prev, res.data.data]);
-      setAddDialogOpen(false);
-      setForm({ nama: '' });
-    });
-  };
-
-  const handleUpdate = () => {
-    if (editingId) {
-      api.put(`/kelas/${editingId}`, { nama: form.nama }).then(res => {
-        setKelas(prev => prev.map(k => k.id === editingId ? res.data.data : k));
-        setEditDialogOpen(false);
-        setEditingId(null);
-        setForm({ nama: '' });
-      });
+  // 🔑 Fungsi ambil data kelas dari API
+  const fetchData = async () => {
+    try {
+      const res = await api.get("/kelas");
+      setKelas(res.data.data);
+    } catch (error) {
+      console.error("❌ Failed to fetch data:", error);
     }
   };
 
-  const handleDelete = (id: number) => {
-    api.delete(`/kelas/${id}`).then(() => setKelas(prev => prev.filter(k => k.id !== id)));
+  // 🔑 Ambil data pertama kali saat komponen di-mount
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // 🔑 Handle perubahan input form (reusable untuk add/edit)
+  const handleChange = (key: string, value: string) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleEditClick = (k: Kelas) => {
-    setEditingId(k.id);
-    setForm({ nama: k.nama });
+  // 🔑 Tambah data kelas
+  const handleAdd = async () => {
+    try {
+      await api.post("/kelas", { kelas: form.kelas });
+      await fetchData(); // ambil ulang biar sinkron dengan DB
+      setAddDialogOpen(false);
+      setForm({ kelas: "" });
+    } catch (error) {
+      console.error("❌ Failed to add data:", error);
+    }
+  };
+
+  // 🔑 Saat klik tombol edit → isi form dengan data kelas
+  const handleEditClick = (item: Kelas) => {
+    setEditingId(item.id);
+    setForm({ kelas: item.kelas });
     setEditDialogOpen(true);
+  };
+
+  // 🔑 Update data kelas
+  const handleUpdate = async () => {
+    if (editingId !== null) {
+      try {
+        await api.put(`/kelas/${editingId}`, { kelas: form.kelas });
+        await fetchData(); // ambil ulang biar konsisten
+        setEditDialogOpen(false);
+        setEditingId(null);
+        setForm({ kelas: "" });
+      } catch (error) {
+        console.error("❌ Failed to update data:", error);
+      }
+    }
+  };
+
+  // 🔑 Hapus data kelas
+  const handleDelete = async (id: number) => {
+    try {
+      await api.delete(`/kelas/${id}`);
+      await fetchData(); // ambil ulang setelah delete
+    } catch (error) {
+      console.error("❌ Failed to delete data:", error);
+    }
   };
 
   return (
@@ -73,6 +105,8 @@ export default function KelasPage() {
           }
         />
       </Card>
+
+      {/* Dialog edit kelas */}
       <EditKelasDialog
         open={editDialogOpen}
         setOpen={setEditDialogOpen}

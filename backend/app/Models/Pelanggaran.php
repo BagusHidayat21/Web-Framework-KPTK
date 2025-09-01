@@ -11,9 +11,19 @@ class Pelanggaran extends Model
     use HasFactory;
 
     protected $fillable = [
-        'siswa_id', 'dilaporkan_oleh', 'jenis_pelanggaran', 'tingkat', 'poin',
-        'tanggal', 'waktu', 'lokasi', 'deskripsi', 'status',
-        'tindakan', 'tanggal_tindak_lanjut', 'catatan'
+        'siswa_id', 
+        'dilaporkan_oleh', 
+        'jenis_pelanggaran', 
+        'tingkat', 
+        'poin',
+        'tanggal', 
+        'waktu', 
+        'lokasi', 
+        'deskripsi', 
+        'status',
+        'tindakan', 
+        'tanggal_tindak_lanjut', 
+        'catatan'
     ];
 
     public function siswa() {
@@ -25,6 +35,6 @@ class Pelanggaran extends Model
     }
 
     public function bukti() {
-        return $this->hasMany(Bukti_Pelanggaran::class, 'pelanggaran_id', 'id');
+        return $this->hasMany(Bukti_Pelanggaran::class, 'pelanggaran_id');
     }
 }

@@ -73,7 +73,16 @@ class AuthController extends Controller
         ]);
     }
 
-    public function verifyToken (Request $request) {
+    public function verifyToken (Request $request)
+    {
+        $token = $request->user()->currentAccessToken();
+
+        if (!$token) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Token tidak valid'
+            ], 401);
+        }
         return response()->json([
             'status' => 'success',
             'message' => 'Token Valid'

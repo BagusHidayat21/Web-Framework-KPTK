@@ -25,7 +25,7 @@ class DashboardController extends Controller
         ];
 
         // Bar: jumlah siswa per kelas & gender
-        $bar_data = $siswas->groupBy(fn($s) => $s->kelas->nama ?? "Tidak Diketahui")
+        $bar_data = $siswas->groupBy(fn($s) => $s->kelas->kelas ?? "Tidak Diketahui")
             ->map(fn($group, $namakelas) => [
                 'nama_kelas' => $namakelas,
                 'Laki-Laki' => $group->where('jenis_kelamin', 'L')->count(),
@@ -39,13 +39,9 @@ class DashboardController extends Controller
                 'count' => $group->count(),
             ])->values();
 
-        // ------------------------------
-        // DATA PELANGGARAN
-        // ------------------------------
         $pelanggaran = Pelanggaran::with('siswa.kelas')->get();
         $totalPelanggaran = $pelanggaran->count();
 
-        // ✅ Tren 6 bulan terakhir (per status)
         $now = Carbon::now();
         $months = collect(range(0, 5))
             ->map(fn($i) => $now->copy()->subMonths($i)->format('Y-m'))
@@ -72,7 +68,7 @@ class DashboardController extends Controller
             ];
         });
 
-        // ✅ Total per jenis pelanggaran
+        //Total per jenis pelanggaran
         $pelanggaranPerJenis = $pelanggaran
             ->groupBy('jenis_pelanggaran')
             ->map(fn($group, $jenis) => [
@@ -80,7 +76,7 @@ class DashboardController extends Controller
                 'total' => $group->count(),
             ])->values();
 
-        // ✅ Total per tingkat
+        //Total per tingkat
         $pelanggaranPerTingkat = $pelanggaran
             ->groupBy('tingkat')
             ->map(fn($group, $tingkat) => [
@@ -88,9 +84,9 @@ class DashboardController extends Controller
                 'total' => $group->count(),
             ])->values();
 
-        // ✅ Total pelanggaran per kelas (urut terbanyak)
+        //Total pelanggaran per kelas (urut terbanyak)
         $pelanggaranPerKelas = $pelanggaran
-            ->groupBy(fn($p) => $p->siswa->kelas->nama ?? 'Tidak Diketahui')
+            ->groupBy(fn($p) => $p->siswa->kelas->kelas ?? 'Tidak Diketahui')
             ->map(fn($group, $kelas) => [
                 'kelas' => $kelas,
                 'total' => $group->count(),

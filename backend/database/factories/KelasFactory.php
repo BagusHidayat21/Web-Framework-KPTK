@@ -22,7 +22,7 @@ class KelasFactory extends Factory
         $angka = $this->faker->randomElement(['A', 'B', 'C']);
 
         return [
-            'nama' => Str::upper("{$kelas} {$jurusan} {$angka}"),
+            'kelas' => Str::upper("{$kelas} {$jurusan} {$angka}"),
         ];
     }
 }
